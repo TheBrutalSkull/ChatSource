@@ -15,21 +15,6 @@ namespace ChatSource
 		public override void Load()
 		{
 			On_RemadeChatMonitor.AddNewMessage += RemadeChatMonitor_AddNewMessage;
-
-			if (activelyModdingField == null)
-			{
-				try
-				{
-					//Terraria.ModLoader.Core: internal class ModCompile: public static bool activelyModding;
-					Assembly ModLoaderAssembly = typeof(ModLoader).Assembly;
-					Type ModCompileType = ModLoaderAssembly.GetType("Terraria.ModLoader.Core.ModCompile");
-					activelyModdingField = ModCompileType.GetField("activelyModding", BindingFlags.Public | BindingFlags.Static);
-				}
-				catch
-				{
-
-				}
-			}
 		}
 
 		private static void RemadeChatMonitor_AddNewMessage(On_RemadeChatMonitor.orig_AddNewMessage orig, RemadeChatMonitor self, string text, Color color, int widthLimitInPixels)
@@ -39,16 +24,60 @@ namespace ChatSource
 			ModifyLastChatMessage();
 		}
 
-		public override void Unload()
-		{
-			activelyModdingField = null;
-		}
-
 		private static void ModifyLastChatMessage()
 		{
 			if (Main.gameMenu) return;
 
-			/* this is all because of tmls ExceptionHandler doing stuff and printing it to chat when in debug/modder mode, causing some error with the stacktrace
+			string name = GetCallingName(true);
+			if (name == string.Empty)
+				return;
+
+			if (Main.chatMonitor is not RemadeChatMonitor chat)
+				return;
+
+			//All classes public
+			//RemadeChatMonitor has private List<ChatMessageContainer> _messages;
+			//ChatMessageContainer has private List<TextSnippet[]> _parsedText;
+			//TextSnippet has public string Text;
+			FieldInfo messagesField = typeof(RemadeChatMonitor).GetField("_messages", BindingFlags.Instance | BindingFlags.NonPublic);
+			List<ChatMessageContainer> messages = messagesField.GetValue(chat) as List<ChatMessageContainer>;
+
+			FieldInfo parsedTextField = typeof(ChatMessageContainer).GetField("_parsedText", BindingFlags.Instance | BindingFlags.NonPublic);
+
+			var lastMessage = messages[0];
+
+			List<TextSnippet[]> parsedText = parsedTextField.GetValue(lastMessage) as List<TextSnippet[]>;
+
+			if (parsedText.Count <= 0)
+				return;
+
+			var snippet = parsedText[0];
+
+			//OriginalText because vanilla recalculates parsedText on window resize based on OriginalText
+			var textOriginal = lastMessage.OriginalText;
+
+			if (textOriginal.StartsWith(name))
+				return;
+
+			var firstWord = snippet[0];
+
+			if (firstWord.Text.StartsWith(name))
+				return;
+
+			firstWord.Text = name + firstWord.Text;
+			lastMessage.OriginalText = name + lastMessage.OriginalText;
+		}
+
+		private static string GetCallingName(bool whitespace = false)
+		{
+			string name = string.Empty;
+			if (!Config.Instance.ChatSourceEnabled)
+				return string.Empty;
+
+			StackFrame[] frames/* = new StackFrame[1]*/;
+
+			//Suppress OutOfBoundsRead from appearing entirely, may invalidate activelyModdingField shenanigans
+			/*
             [19:03:00] [1/WARN] [tML]: Silently Caught Exception: 
             System.BadImageFormatException: OutOfBoundsRead
                at System.Reflection.Throw.OutOfBounds()
@@ -66,72 +95,7 @@ namespace ChatSource
                at DMD<DMD<Hook<Terraria.Main::NewText>?34669516>?51491948::Hook<Terraria.Main::NewText>?34669516>(String , Byte , Byte , Byte , Boolean )
                at AlchemistNPC.AlchemistNPCPlayer.OnEnterWorld(Player player) in AlchemistNPCPlayer.cs:line 499
             */
-
-			//I wish I didn't have to do this. Should have no implications for non-modders
-			bool setToFalse = false;
-
-			if ((bool?)activelyModdingField?.GetValue(null) == true)
-			{
-				activelyModdingField.SetValue(null, false);
-				setToFalse = true;
-			}
-			//End of shenanigans
-
-			string name = GetCallingName(true);
-
-			if (setToFalse)
-			{
-				activelyModdingField.SetValue(null, true);
-			}
-
-			if (name == string.Empty)
-				return;
-
-			if (Main.chatMonitor is RemadeChatMonitor chat)
-			{
-				//All classes public
-				//RemadeChatMonitor has private List<ChatMessageContainer> _messages;
-				//ChatMessageContainer has private List<TextSnippet[]> _parsedText;
-				//TextSnippet has public string Text;
-				FieldInfo messagesField = typeof(RemadeChatMonitor).GetField("_messages", BindingFlags.Instance | BindingFlags.NonPublic);
-				List<ChatMessageContainer> messages = messagesField.GetValue(chat) as List<ChatMessageContainer>;
-
-				FieldInfo parsedTextField = typeof(ChatMessageContainer).GetField("_parsedText", BindingFlags.Instance | BindingFlags.NonPublic);
-
-				var lastMessage = messages[0];
-
-				List<TextSnippet[]> parsedText = parsedTextField.GetValue(lastMessage) as List<TextSnippet[]>;
-
-				if (parsedText.Count <= 0)
-					return;
-
-				var snippet = parsedText[0];
-
-				//OriginalText because vanilla recalculates parsedText on window resize based on OriginalText
-				var textOriginal = lastMessage.OriginalText;
-
-				if (textOriginal.StartsWith(name))
-					return;
-
-				var firstWord = snippet[0];
-
-				if (firstWord.Text.StartsWith(name))
-					return;
-
-				firstWord.Text = name + firstWord.Text;
-				lastMessage.OriginalText = name + lastMessage.OriginalText;
-			}
-		}
-
-		public static FieldInfo activelyModdingField;
-
-		private static string GetCallingName(bool whitespace = false)
-		{
-			string name = string.Empty;
-			if (!Config.Instance.ChatSourceEnabled)
-				return string.Empty;
-
-			StackFrame[] frames/* = new StackFrame[1]*/;
+			using var _ = new Logging.QuietExceptionHandle();
 			try
 			{
 				frames = new StackTrace(true).GetFrames();
@@ -180,13 +144,13 @@ namespace ChatSource
 						{
 							if (ModLoader.TryGetMod(name, out Mod mod))
 							{
-								name = mod.DisplayName;
+								name = mod.DisplayNameClean;
 							}
 							else
 							{
 								if (ModLoader.TryGetMod(name + "Mod", out Mod mod2))
 								{
-									name = mod2.DisplayName;
+									name = mod2.DisplayNameClean;
 								}
 							}
 						}
@@ -209,6 +173,7 @@ namespace ChatSource
 			}
 			if (string.IsNullOrEmpty(name))
 				return string.Empty;
+
 			return $"[{name}]" + (whitespace ? " " : "");
 		}
 	}

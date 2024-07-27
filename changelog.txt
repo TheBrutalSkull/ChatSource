@@ -1,4 +1,3 @@
 v{ModVersion} has been published to {tMLBuildPurpose} tML v{tMLVersion}. Learn more @ {ModHomepage}
 
-* Suppressed logging a particular, but harmless error from appearing in logs.
-* Made mod display names appear without chat tags.
+* Added simplified chinese localization, thanks Cyrilly!

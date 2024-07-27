@@ -4,6 +4,6 @@ it-IT, 7/7, 100%, missing 0
 fr-FR, 0/7, 0%, missing 7
 es-ES, 0/7, 0%, missing 7
 ru-RU, 7/7, 100%, missing 0
-zh-Hans, 0/7, 0%, missing 7
+zh-Hans, 7/7, 100%, missing 0
 pt-BR, 0/7, 0%, missing 7
 pl-PL, 0/7, 0%, missing 7

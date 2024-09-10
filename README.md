@@ -16,8 +16,6 @@ Shows the source of messages in the chat. Clientside, toggleable via config.
 
 **Before:**
 
-![Fixed](https://raw.githubusercontent.com/direwolf420/ChatSource/1.4/fixed.png)
-
 ```
 "Your world has been blessed with Cobalt!"
 "Player got 10 tier 1 Reversivity coins and now has 70 in total."
@@ -29,6 +27,8 @@ Shows the source of messages in the chat. Clientside, toggleable via config.
 "Your world has been blessed with Cobalt!"
 "[AlchemistNPC] Player got 10 tier 1 Reversivity coins and now has 70 in total."
 ```
+
+![Fixed](https://raw.githubusercontent.com/direwolf420/ChatSource/1.4/fixed.png)
 
 **Notes:**
 * Some stuff like ore spawn announcements in multiplayer will show no mod associated because those messages are serversided

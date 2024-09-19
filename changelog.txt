@@ -1,3 +1,5 @@
 v{ModVersion} has been published to {tMLBuildPurpose} tML v{tMLVersion}. Learn more @ {ModHomepage}
 
-* Added simplified chinese localization, thanks Cyrilly!
+* Chat Source text is now colored white, independent of the color from the chat message
+* Fixed not working with Modder's Toolkit's REPL feature
+* Fixed not working when the chat message contains item chat tags

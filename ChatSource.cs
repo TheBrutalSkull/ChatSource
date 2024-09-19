@@ -59,13 +59,14 @@ namespace ChatSource
 			if (textOriginal.StartsWith(name))
 				return;
 
-			var firstWord = snippet[0];
-
-			if (firstWord.Text.StartsWith(name))
+			if (snippet[0].Text.StartsWith(name))
 				return;
 
-			firstWord.Text = name + firstWord.Text;
-			lastMessage.OriginalText = name + lastMessage.OriginalText;
+			var newSnippet = new TextSnippet(name);
+			//newSnippet.Color = snippet[0].Color; //Keep it white
+			var snippetList = new List<TextSnippet>(snippet);
+			snippetList.Insert(0, newSnippet);
+			parsedText[0] = snippetList.ToArray();
 		}
 
 		private static string GetCallingName(bool whitespace = false)

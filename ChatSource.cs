@@ -67,6 +67,8 @@ namespace ChatSource
 			var snippetList = new List<TextSnippet>(snippet);
 			snippetList.Insert(0, newSnippet);
 			parsedText[0] = snippetList.ToArray();
+
+			lastMessage.OriginalText = name + textOriginal;
 		}
 
 		private static string GetCallingName(bool whitespace = false)
